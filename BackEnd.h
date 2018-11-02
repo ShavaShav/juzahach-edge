@@ -11,42 +11,49 @@
 
 class BackEnd : public QObject {
     Q_OBJECT
-        Q_PROPERTY(QString connectionString READ connectionString WRITE setConnectionString NOTIFY connectionStringChanged)
-        Q_PROPERTY(int connectionStringStatus READ connectionStringStatus)
-        Q_PROPERTY(QString gpsLocation READ gpsLocation WRITE setGpsLocation NOTIFY gpsLocationDataSent)
-        //TODO::
-        //add framework to send location data from QML to C++
-        //get internet working and server communication
+        Q_PROPERTY(QString serverAccessCode READ serverAccessCode WRITE setServerAccessCode NOTIFY serverAccessCodeChanged)
+        Q_PROPERTY(QString locationData READ locationData WRITE setLocationData NOTIFY locationDataSent)
+
+        Q_PROPERTY(bool serverAccessCodeStatus READ serverAccessCodeStatus)
+        Q_PROPERTY(bool locationDataSentStatus READ locationDataSentStatus)
+        Q_PROPERTY(bool sendLocationDataStatus READ sendLocationDataStatus)
+        Q_PROPERTY(bool networkConnectionStatus READ networkConnectionStatus)
+
+    //TODO::
+    //get internet working and server communication
 public:
     explicit BackEnd(QObject *parent = nullptr);
 
     //getter methods
-    QString connectionString();
-    QString gpsLocation();
-    int connectionStringStatus();
-    bool sendGpsDataStatus();
+    QString serverAccessCode();
+    QString locationData();
+
+    bool serverAccessCodeStatus();
+    bool locationDataSentStatus();
+    bool networkConnectionStatus();
+    bool sendLocationDataStatus();
 
     //setter methods
-    void setConnectionString(const QString &newString);
-    void setGpsLocation(const QString &gpsInformation);
+    void setServerAccessCode(const QString &newCode);
+    void setLocationData(const QString &locationInformation);
 
 signals:
-    void connectionStringChanged();
-    void gpsLocationDataSent();
+    void serverAccessCodeChanged();
+    void locationDataSent();
 
 private:
-    void updateServerString();
-    void sendGpsData();
-    void createDatabase(bool dropTablesFlag);
-
     DatabaseHelper databaseHelper;
     QJsonObject json;
-    QString serverString;
+
+    QString accessCode;
     QString timestamp;
     QString coordinates;
     QString longitude;
     QString latitude;
-    int stringStatus;
-    bool sendFlag;
+
+    bool accessCodeStatusFlag;
+    bool sendLocationDataFlag;
+    bool storeLocationDataFlag;
+    bool connectionStatusFlag = false;
 };
 #endif // BACKEND_H

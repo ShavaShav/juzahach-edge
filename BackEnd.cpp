@@ -3,13 +3,13 @@
 BackEnd::BackEnd(QObject *parent) : QObject(parent) {
     //sending 'true' to the constructor will drop all tables
     //and recreate them, all data will be lost
-    databaseHelper = DatabaseHelper(false);
+    databaseHelper = DatabaseHelper(true);
 
     //get serverKey and serverStatus from the database
     QHash<QString, QString> hashmap = databaseHelper.getServerKey();
 
-    serverString = hashmap["server_key"];
-    stringStatus = hashmap["key_status"].toInt();
+    accessCode = hashmap["server_key"];
+    accessCodeStatusFlag = hashmap["key_status"].toInt();
 
     QTcpSocket *socket = new QTcpSocket();
     socket->connectToHost("http:://www.google.ca", 80);
@@ -23,52 +23,61 @@ BackEnd::BackEnd(QObject *parent) : QObject(parent) {
 }
 
 //getter methods
-QString BackEnd::connectionString() {
-    return serverString;
+QString BackEnd::serverAccessCode() {
+    return accessCode;
 }
 
-QString BackEnd::gpsLocation() {
-    return "Timestamp: " + timestamp + "\n" + "Coordinates: " + coordinates;
+QString BackEnd::locationData() {
+    return "";
 }
 
-int BackEnd::connectionStringStatus() {
-    return stringStatus;
+bool BackEnd::serverAccessCodeStatus() {
+    return accessCodeStatusFlag;
 }
 
-bool BackEnd::sendGpsDataStatus() {
-    //will return the status of the sent GPS data
-    return sendFlag;
+bool BackEnd::locationDataSentStatus() {
+    return sendLocationDataFlag;
 }
+
+bool BackEnd::networkConnectionStatus() {
+    return connectionStatusFlag;
+}
+
+bool BackEnd::sendLocationDataStatus() {
+    return sendLocationDataFlag;
+}
+
 
 //setter methods
-void BackEnd::setConnectionString(const QString &newString) {
-    if(serverString != "") {
-        serverString = newString;
+void BackEnd::setServerAccessCode(const QString &newCode) {
+    if(newCode != "") {
+        accessCode = newCode;
 
         //perform a server test with the new string
         //TODO::
-        stringStatus = 1;
+        accessCodeStatusFlag = true;
 
-        databaseHelper.insertServerKey(serverString, stringStatus);
+        databaseHelper.insertServerKey(accessCode, accessCodeStatusFlag);
 
-        emit connectionStringChanged();
+        emit serverAccessCodeChanged();
     }
 }
 
-void BackEnd::setGpsLocation(const QString &gpsInformation) {
-    if(gpsInformation.length() > 1) {
-        coordinates = gpsInformation.left(gpsInformation.indexOf("|"));
-        timestamp = gpsInformation.mid(gpsInformation.indexOf("|") + 1);
+void BackEnd::setLocationData(const QString &locationInformation) {
+    if(locationInformation.length() > 1) {
+        coordinates = locationInformation.left(locationInformation.indexOf("|"));
+        timestamp = locationInformation.mid(locationInformation.indexOf("|") + 1);
 
         latitude = coordinates.left(coordinates.indexOf(" "));
         longitude = coordinates.mid(coordinates.indexOf(" ") + 1);
+
         qInfo() << "[timestamp]: " + timestamp + "\n";
         qInfo() << "[coordinates]: " + coordinates + "\n";
         qInfo() << "[latitude]: " + latitude + "\n";
         qInfo() << "[longitude]: " + longitude + "\n";
-        json = QJsonObject();
 
-        json["serverString"] = serverString;
+        json = QJsonObject();
+        json["serverString"] = accessCode;
         json["latitude"] = latitude;
         json["longitude"] = longitude;
         json["timestamp"] = timestamp;
@@ -76,25 +85,25 @@ void BackEnd::setGpsLocation(const QString &gpsInformation) {
         qInfo() << "JSON OBJECT: " << json;
         //Test to see if theres an internet connection and the server is available
         //TODO::
-        bool connectionFlag = false;
 
-        if(stringStatus == 1 && connectionFlag) {
-            //there is an internet connection
-            //server string is valid
-            //send ALL stored database entries, then delete the entries
+        if(storeLocationDataFlag) {
+            if(accessCodeStatusFlag && connectionStatusFlag) {
+                //there is an internet connection
+                //server string is valid
+                //send ALL stored database entries, then delete the entries
+                sendLocationDataFlag = true;
 
+                emit locationDataSent();
+            }
+            else {
+                //no internet connection
+                //server string is invalid
+                databaseHelper.insertLocation(latitude, longitude, timestamp);
 
-            sendFlag = true;
+                sendLocationDataFlag = false;
 
-            emit gpsLocationDataSent();
-        }
-        else {
-            //no internet connection
-            //server string is invalid
-            databaseHelper.insertLocation(latitude, longitude, timestamp);
-            sendFlag = false;
-
-            emit gpsLocationDataSent();
+                emit locationDataSent();
+            }
         }
     }
 }
