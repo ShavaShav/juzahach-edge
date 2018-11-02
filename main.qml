@@ -67,7 +67,7 @@ Window {
                 gpsLocationFlag.color = "#13f406"
                 latitudeValue.text = position.coordinate.latitude
                 longitudeValue.text = position.coordinate.longitude
-                timestampValue.text = position.coordinate.timestamp
+                timestampValue.text = position.timestamp
             }
         }
     }
@@ -119,7 +119,7 @@ Window {
                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                 font.pixelSize: 22
                 display: AbstractButton.TextBesideIcon
-                checkState: Qt.Checked
+                checkState: backEnd.recordLocationDataStatus
             }
 
             Text {

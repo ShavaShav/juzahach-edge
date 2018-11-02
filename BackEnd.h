@@ -16,7 +16,7 @@ class BackEnd : public QObject {
 
         Q_PROPERTY(bool serverAccessCodeStatus READ serverAccessCodeStatus)
         Q_PROPERTY(bool locationDataSentStatus READ locationDataSentStatus)
-        Q_PROPERTY(bool sendLocationDataStatus READ sendLocationDataStatus)
+        Q_PROPERTY(int recordLocationDataStatus READ recordLocationDataStatus NOTIFY recordLocationDataChanged)
         Q_PROPERTY(bool networkConnectionStatus READ networkConnectionStatus)
 
     //TODO::
@@ -31,7 +31,7 @@ public:
     bool serverAccessCodeStatus();
     bool locationDataSentStatus();
     bool networkConnectionStatus();
-    bool sendLocationDataStatus();
+    int recordLocationDataStatus();
 
     //setter methods
     void setServerAccessCode(const QString &newCode);
@@ -40,6 +40,7 @@ public:
 signals:
     void serverAccessCodeChanged();
     void locationDataSent();
+    void recordLocationDataChanged();
 
 private:
     DatabaseHelper databaseHelper;
@@ -53,7 +54,7 @@ private:
 
     bool accessCodeStatusFlag;
     bool sendLocationDataFlag;
-    bool storeLocationDataFlag;
+    int recordLocationDataFlag = 0;
     bool connectionStatusFlag = false;
 };
 #endif // BACKEND_H

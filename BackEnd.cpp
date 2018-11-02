@@ -12,7 +12,7 @@ BackEnd::BackEnd(QObject *parent) : QObject(parent) {
     accessCodeStatusFlag = hashmap["key_status"].toInt();
 
     QTcpSocket *socket = new QTcpSocket();
-    socket->connectToHost("http:://www.google.ca", 80);
+    socket->connectToHost("www.google.ca", 80);
 
     if (socket->waitForConnected(5000)) {
         qDebug() << "Connected";
@@ -43,10 +43,9 @@ bool BackEnd::networkConnectionStatus() {
     return connectionStatusFlag;
 }
 
-bool BackEnd::sendLocationDataStatus() {
-    return sendLocationDataFlag;
+int BackEnd::recordLocationDataStatus() {
+    return recordLocationDataFlag;
 }
-
 
 //setter methods
 void BackEnd::setServerAccessCode(const QString &newCode) {
@@ -86,7 +85,8 @@ void BackEnd::setLocationData(const QString &locationInformation) {
         //Test to see if theres an internet connection and the server is available
         //TODO::
 
-        if(storeLocationDataFlag) {
+        //Qt::CheckState == 2: check box is checked, 1 is partial, 0 is unchecked
+        if(recordLocationDataFlag == 2) {
             if(accessCodeStatusFlag && connectionStatusFlag) {
                 //there is an internet connection
                 //server string is valid
