@@ -3,22 +3,30 @@
 BackEnd::BackEnd(QObject *parent) : QObject(parent) {
     //sending 'true' to the constructor will drop all tables
     //and recreate them, all data will be lost
-    databaseHelper = DatabaseHelper(true);
+    databaseHelper = DatabaseHelper(false);
 
-    //get serverKey and serverStatus from the database
-    QHash<QString, QString> hashmap = databaseHelper.getServerKey();
+    //get accessCode, accessCodeStatus and checkbox value from the database
+    QHash<QString, QString> hashmap = databaseHelper.getSettings();
 
-    accessCode = hashmap["server_key"];
-    accessCodeStatusFlag = hashmap["key_status"].toInt();
+    accessCode = hashmap["access_code"];
+    accessCodeStatusFlag = hashmap["code_status"].toInt();
+    checkboxValue = hashmap["checkbox_value"].toInt();
+    jsonWebToken = hashmap["json_webtoken"];
 
+    qInfo() << "[access_code]: " + accessCode + "\n";
+    qInfo() << "[code_status]: " + QString::number(accessCodeStatusFlag)+ "\n";
+    qInfo() << "[checkbox_value]: " + QString::number(checkboxValue) + "\n";
+    qInfo() << "[json_webtoken]: " + jsonWebToken + "\n";
+
+    //connect to google.ca to test network connection
     QTcpSocket *socket = new QTcpSocket();
     socket->connectToHost("www.google.ca", 80);
 
-    if (socket->waitForConnected(5000)) {
-        qDebug() << "Connected";
+    if(socket->waitForConnected(5000)) {
+        connectionStatusFlag = true;
     }
     else {
-        qDebug() << "Not connected";
+        connectionStatusFlag = false;
     }
 }
 
@@ -43,8 +51,8 @@ bool BackEnd::networkConnectionStatus() {
     return connectionStatusFlag;
 }
 
-int BackEnd::recordLocationDataStatus() {
-    return recordLocationDataFlag;
+int BackEnd::checkboxStatus() {
+    return checkboxValue;
 }
 
 //setter methods
@@ -56,10 +64,17 @@ void BackEnd::setServerAccessCode(const QString &newCode) {
         //TODO::
         accessCodeStatusFlag = true;
 
-        databaseHelper.insertServerKey(accessCode, accessCodeStatusFlag);
+        databaseHelper.updateAccessCode(accessCode);
+        databaseHelper.updateAccessCodeStatus(accessCodeStatusFlag);
+        databaseHelper.updateJsonWebToken("JSON WEBTOKEN NEW UPDATED VALUE");
 
         emit serverAccessCodeChanged();
     }
+}
+
+void BackEnd::setCheckboxStatus(const int &newValue) {
+    checkboxValue = newValue;
+    databaseHelper.updateCheckboxValue(checkboxValue);
 }
 
 void BackEnd::setLocationData(const QString &locationInformation) {
@@ -75,6 +90,8 @@ void BackEnd::setLocationData(const QString &locationInformation) {
         qInfo() << "[latitude]: " + latitude + "\n";
         qInfo() << "[longitude]: " + longitude + "\n";
 
+        //TODO::
+        //need to nest these, check GitLab
         json = QJsonObject();
         json["serverString"] = accessCode;
         json["latitude"] = latitude;
@@ -84,26 +101,37 @@ void BackEnd::setLocationData(const QString &locationInformation) {
         qInfo() << "JSON OBJECT: " << json;
         //Test to see if theres an internet connection and the server is available
         //TODO::
+        QTcpSocket *socket = new QTcpSocket();
+        socket->connectToHost("www.google.ca", 80);
 
-        //Qt::CheckState == 2: check box is checked, 1 is partial, 0 is unchecked
-        if(recordLocationDataFlag == 2) {
-            if(accessCodeStatusFlag && connectionStatusFlag) {
-                //there is an internet connection
-                //server string is valid
-                //send ALL stored database entries, then delete the entries
-                sendLocationDataFlag = true;
+        if(socket->waitForConnected(5000)) {
+            connectionStatusFlag = true;
+            emit networkConnectionStatusChanged();
+        }
+        else {
+            connectionStatusFlag = false;
+            emit networkConnectionStatusChanged();
+        }
 
-                emit locationDataSent();
-            }
-            else {
-                //no internet connection
-                //server string is invalid
-                databaseHelper.insertLocation(latitude, longitude, timestamp);
+        if(accessCodeStatusFlag && connectionStatusFlag) {
+            //there is an internet connection
+            //server string is valid
+            //send ALL stored database entries, then delete the entries
+            sendLocationDataFlag = true;
 
-                sendLocationDataFlag = false;
+            emit locationDataSent();
+        }
+        else if(accessCodeStatusFlag) {
+            //no internet connection
+            //server string is invalid
+            databaseHelper.updateLocation(latitude, longitude, timestamp);
 
-                emit locationDataSent();
-            }
+            sendLocationDataFlag = false;
+
+            emit locationDataSent();
+        }
+        else {
+            qInfo() << "No location data stored or sent";
         }
     }
 }

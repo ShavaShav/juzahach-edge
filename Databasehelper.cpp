@@ -1,7 +1,7 @@
 #include "Databasehelper.h"
 
 DatabaseHelper::DatabaseHelper() {
-
+    //default constructor
 }
 
 DatabaseHelper::DatabaseHelper(bool flag) {
@@ -22,25 +22,26 @@ void DatabaseHelper::createDatabase(bool dropTablesFlag) {
     //////////////////////////////////////////////////////////////
     if(dropTablesFlag) {
         queryString =
-            "DROP TABLE IF EXISTS Server;";
+            "DROP TABLE IF EXISTS Settings;";
 
         if(sqlQuery.exec(queryString)) {
-            qInfo() << "\n[SUCCESS] DROPPED TABLE 'Server'";
+            qInfo() << "\n[SQL][SUCCESS][DROP][Settings]\n";
         }
         else {
-            qInfo() << "\n[FAILURE] DROPPING Table 'Server'";
+            qInfo() << "\n[SQL][FAILURE][DROP][Settings]\n";
             qInfo() << sqlQuery.lastError();
         }
+
         sqlQuery.finish();
 
         queryString =
             "DROP TABLE IF EXISTS Locations;";
 
         if(sqlQuery.exec(queryString)) {
-            qInfo() << "\n[SUCCESS] DROPPED TABLE 'Locations'";
+            qInfo() << "\n[SQL][SUCCESS][DROP][Locations]\n";
         }
         else {
-            qInfo() << "\n[FAILURE] DROPPING Table 'Locations'";
+            qInfo() << "\n[SQL][FAILURE][DROP][Locations]\n";
             qInfo() << sqlQuery.lastError();
         }
 
@@ -48,35 +49,37 @@ void DatabaseHelper::createDatabase(bool dropTablesFlag) {
     }
     //////////////////////////////////////////////////////////////
 
-    //create the database tables, will fail if they already exist
+    //create the database tables, will show error if they already exist (thats okay)
     queryString =
-        "CREATE TABLE Server ( "
-            "server_key TEXT NOT NULL, "
-            "key_status INTEGER NOT NULL "
+        "CREATE TABLE Settings ( "
+            "access_code TEXT NOT NULL, "
+            "code_status INTEGER NOT NULL, "
+            "checkbox_value INTEGER NOT NULL, "
+            "json_webtoken TEXT NOT NULL "
         ");";
 
     if(sqlQuery.exec(queryString)) {
-        qInfo() << "\n[SUCCESS] Creating Table 'Server'";
+        qInfo() << "\n[SQL][SUCCESS][CREATE][Settings]\n";
 
         //table is being created for the first time
-        //add dummy value to show tutorial
+        //add dummy values
         sqlQuery.finish();
 
         queryString =
-            "INSERT INTO Server (server_key, key_status) "
-            "VALUES (' ', -1) "
+            "INSERT INTO Settings (access_code, code_status, checkbox_value, json_webtoken) "
+            "VALUES ('access_code_placeholder', 0, 0, 'json_web_token_placeholder') "
             ";";
 
         if(sqlQuery.exec(queryString)) {
-            qInfo() << "\n[SUCCESS] Inserting Into Table 'Server'";
+            qInfo() << "\n[SQL][SUCCESS][INSERT][Settings]\n";
         }
         else {
-            qInfo() << "\n[FAILURE] Inserting Into Table 'Server'";
+            qInfo() << "\n[SQL][FAILURE][INSERT][Settings]\n";
             qInfo() << sqlQuery.lastError();
         }
     }
     else {
-        qInfo() << "\n[FAILURE] Creating Table 'Server'";
+        qInfo() << "\n[SQL][FAILURE][CREATE][Settings]\n";
         qInfo() << sqlQuery.lastError();
     }
 
@@ -91,31 +94,26 @@ void DatabaseHelper::createDatabase(bool dropTablesFlag) {
         ");";
 
     if(sqlQuery.exec(queryString)) {
-        qInfo() << "\n[SUCCESS] Creating Table 'Locations'";
+        qInfo() << "\n[SQL][SUCCESS][CREATE][Locations]\n";
     }
     else {
-        qInfo() << "\n[FAILURE] Creating Table 'Locations'";
+        qInfo() << "\n[SQL][FAILURE][CREATE][Locations]\n";
         qInfo() << sqlQuery.lastError();
     }
 
     sqlQuery.finish();
 }
 
-QHash<QString, QString> DatabaseHelper::getServerKey() {
-    //retrieve the server key from the database
+//get the 4 stored user settings
+QHash<QString, QString> DatabaseHelper::getSettings() {
     queryString =
-        "SELECT "
-            "server_key, "
-            "key_status "
-        "FROM "
-            "Server "
-        ";";
+        "SELECT * FROM Settings;";
 
     if(sqlQuery.exec(queryString)) {
-        qInfo() << "\n[SUCCESS] Selecting From Table 'Server'";
+        qInfo() << "\n[SQL][SUCCESS][SELECT][*][Settings]\n";
     }
     else {
-        qInfo() << "\n[FAILURE] Selecting From Table 'Server'";
+        qInfo() << "\n[SQL][FAILURE][SELECT][*][Settings]\n";
         qInfo() << sqlQuery.lastError();
     }
 
@@ -123,54 +121,110 @@ QHash<QString, QString> DatabaseHelper::getServerKey() {
 
     QHash<QString, QString> hashmap;
 
-    hashmap.insert("server_key", sqlQuery.value(0).toString());
-    hashmap.insert("key_status", sqlQuery.value(1).toString());
+    hashmap.insert("access_code", sqlQuery.value(0).toString());
+    hashmap.insert("code_status", sqlQuery.value(1).toString());
+    hashmap.insert("checkbox_value", sqlQuery.value(2).toString());
+    hashmap.insert("json_webtoken", sqlQuery.value(3).toString());
 
     sqlQuery.finish();
 
     return hashmap;
 }
 
-void DatabaseHelper::insertServerKey(QString serverString, int stringStatus) {
-    //before adding the new table entry, drop the table
-    //only one server string allowed per device
-    queryString =
-        "DELETE FROM Server;";
-
-    if(sqlQuery.exec(queryString)) {
-        qInfo() << "\n[SUCCESS] DELETING From Table 'Server'";
-    }
-    else {
-        qInfo() << "\n[FAILURE] DELETING From Table 'Server'";
-        qInfo() << sqlQuery.lastError();
-    }
-
-    sqlQuery.finish();
+//update / setter methods
+void DatabaseHelper::updateAccessCode(const QString accessCode) {
+    qInfo() << "[VALUE] access_code: " + accessCode;
 
     queryString =
-            "INSERT INTO Server (server_key, key_status) "
-            "VALUES (:string, :status);";
+        "UPDATE Settings SET access_code = ':code';";
 
     sqlQuery.prepare(queryString);
-    sqlQuery.bindValue(":string", serverString);
-    sqlQuery.bindValue(":status", stringStatus);
+    sqlQuery.bindValue(":code", accessCode);
 
-    if(sqlQuery.exec()) {
-        qInfo() << "\n[SUCCESS] Inserting Into Table 'Server'";
+    if(sqlQuery.exec(queryString)) {
+        qInfo() << "\n[SQL][SUCCESS][UPDATE][Settings][access_code]\n";
     }
     else {
-        qInfo() << "\n[FAILURE] Inserting Into Table 'Server'";
+        qInfo() << "\n[SQL][FAILURE][UPDATE][Settings][access_code]\n";
         qInfo() << sqlQuery.lastError();
     }
 
     sqlQuery.finish();
 }
 
-void DatabaseHelper::insertLocation(const QString &latitude, const QString &longitude, const QString &timestamp) {
+void DatabaseHelper::updateAccessCodeStatus(const bool codeStatus) {
+    qInfo() << "[VALUE] code_status: " + QString::number(codeStatus);
+
+    //for some reason, cannot prepare with the codeStatus variable....
+    if(codeStatus) {
+        queryString =
+             "UPDATE Settings SET code_status = 1";
+    }
+    else if(codeStatus) {
+        queryString =
+             "UPDATE Settings SET code_status = 0";
+    }
+
+    if(sqlQuery.exec(queryString)) {
+        qInfo() << "\n[SQL][SUCCESS][UPDATE][Settings][code_status]\n";
+    }
+    else {
+        qInfo() << "\n[SQL][FAILURE][UPDATE][Settings][code_status]\n";
+        qInfo() << sqlQuery.lastError();
+    }
+
+    sqlQuery.finish();
+}
+
+void DatabaseHelper::updateCheckboxValue(const int checkBoxValue) {
+    qInfo() << "[VALUE] checkbox_value: " + QString::number(checkBoxValue);
+
+    //for some reason, cannot prepare with the checkBoxValue variable....
+    if(checkBoxValue == 0) {
+        queryString =
+            "UPDATE Settings SET checkbox_value = 0";
+    }
+    else if(checkBoxValue == 2) {
+        queryString =
+            "UPDATE Settings SET checkbox_value = 2";
+    }
+
+    if(sqlQuery.exec(queryString)) {
+        qInfo() << "\n[SQL][SUCCESS][UPDATE][Settings][checkbox_value]\n";
+    }
+    else {
+        qInfo() << "\n[SQL][FAILURE][UPDATE][Settings][checkbox_value]\n";
+        qInfo() << sqlQuery.lastError();
+    }
+
+    sqlQuery.finish();
+}
+
+void DatabaseHelper::updateJsonWebToken(const QString jsonWebToken) {
+    qInfo() << "[VALUE] json_webtoken: "+ jsonWebToken;
+
+    queryString =
+        "UPDATE Settings SET json_webtoken = ':json';";
+
+    sqlQuery.prepare(queryString);
+    sqlQuery.bindValue(":json", jsonWebToken);
+
+    if(sqlQuery.exec(queryString)) {
+        qInfo() << "\n[SQL][SUCCESS][UPDATE][Settings][json_webtoken]\n";
+    }
+    else {
+        qInfo() << "\n[SQL][FAILURE][UPDATE][Settings][json_webtoken]\n";
+        qInfo() << sqlQuery.lastError();
+    }
+
+    sqlQuery.finish();
+}
+
+void DatabaseHelper::updateLocation(const QString &latitude, const QString &longitude, const QString &timestamp) {
     //store the coordinates in the database
     queryString =
-            "INSERT INTO Locations (latitude, longitude, timestamp) "
-            "VALUES (:latitude, :longitude, :timestamp);";
+        "INSERT INTO Locations (latitude, longitude, timestamp) "
+        "VALUES (:latitude, :longitude, :timestamp);";
 
     sqlQuery.prepare(queryString);
     sqlQuery.bindValue(":latitude", latitude);
@@ -178,10 +232,10 @@ void DatabaseHelper::insertLocation(const QString &latitude, const QString &long
     sqlQuery.bindValue(":timestamp", timestamp);
 
     if(sqlQuery.exec()) {
-        qInfo() << "\n[SUCCESS] Inserting Into Table 'Locations'";
+        qInfo() << "\n[SQL][SUCCESS][INSERT][Locations]\n";
     }
     else {
-        qInfo() << "\n[FAILURE] Inserting Into Table 'Locations'";
+        qInfo() << "\n[SQL][FAILURE][INSERT][Locations]\n";
         qInfo() << sqlQuery.lastError();
     }
 

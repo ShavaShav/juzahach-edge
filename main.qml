@@ -12,7 +12,7 @@ import gpslocation.backend 2.1
 
 //Colours:
 //Invalid: #f40606
-//Vaid: #13f406
+//Valid: #13f406
 
 Window {
     id: window
@@ -23,15 +23,23 @@ Window {
 
     BackEnd {
         id: backEnd
+
         onServerAccessCodeChanged: {
-            if(backend.serverAccessCodeStatus) {
-                gpsLocationFlag.color = "#13f406"
+            if(backEnd.serverAccessCodeStatus) {
+                accessCodeFlag.color = "#13f406"
             }
             else {
-                gpsLocationFlag.color = "#f40606"
+                accessCodeFlag.color = "#f40606"
             }
+        }
 
-            console.log("\n[CHANGE] Access Code Changed: ")
+        onNetworkConnectionStatusChanged: {
+            if(backEnd.networkConnectionStatus) {
+                networkConnectionFlag.color = "#13f406"
+            }
+            else {
+                networkConnectionFlag.color = "#f40606"
+            }
         }
 
         onLocationDataSent: {
@@ -39,35 +47,35 @@ Window {
                 console.log("\n[SUCCESS] Sent location data to server")
             }
             else {
-                console.log("\n[FAILURE] Could not send location data to server")
+                console.log("\n[FAILURE] Could not send location data to server, stored in local database")
             }
         }
     }
 
-    //activate Geolocation and update the map / mapitem with current location
+    //activate Geolocation and attempt to get the current location
     PositionSource {
-        active: true
+        id: positionSource
         onPositionChanged: {
             //display current location components
             if((position.coordinate + "") == "") {
-                //update the UI with the new values
+                //no location, show an error to the user
                 gpsLocationFlag.color = "#f40606"
                 latitudeValue.text = "Unavailable"
                 longitudeValue.text = "Unavailable"
                 timestampValue.text = "Unavailable"
             }
             else {
-                if(checkBoxTrackLocation.checkState) {
+                if(checkBoxTrackLocation.checkState == 2) {
                     //send the data to the backend [C++]
                     //EPSG:4326 standard states that coordinate order should be latitude, longitude
                     backEnd.locationData = position.coordinate.latitude + " " + position.coordinate.longitude + "|" + position.timestamp
-                }
 
-                //update the UI with the new values
-                gpsLocationFlag.color = "#13f406"
-                latitudeValue.text = position.coordinate.latitude
-                longitudeValue.text = position.coordinate.longitude
-                timestampValue.text = position.timestamp
+                    //update and show the new coordinates to the user
+                    gpsLocationFlag.color = "#13f406"
+                    latitudeValue.text = position.coordinate.latitude
+                    longitudeValue.text = position.coordinate.longitude
+                    timestampValue.text = position.timestamp
+                }
             }
         }
     }
@@ -119,7 +127,41 @@ Window {
                 Layout.alignment: Qt.AlignLeft | Qt.AlignTop
                 font.pixelSize: 22
                 display: AbstractButton.TextBesideIcon
-                checkState: backEnd.recordLocationDataStatus
+                checkState: {
+                    //Qt::CheckState == 0: is unchecked
+                    //Qt::CheckState == 1: is partial
+                    //Qt::CheckState == 2: check box is checked
+                    checkBoxTrackLocation.checkState = backEnd.checkboxStatus
+
+                    if(checkBoxTrackLocation.checkState == 0) {
+                        positionSource.active = false
+                        gpsLocationFlag.color = "#f40606"
+
+                        console.log("Location Tracking is turned off")
+                    }
+                    else if(checkBoxTrackLocation.checkState == 2) {
+                        positionSource.active = true
+                        console.log("Location Tracking is turned on")
+                    }
+                }
+                onCheckStateChanged: {
+                    //Qt::CheckState == 0: is unchecked
+                    //Qt::CheckState == 1: is partial
+                    //Qt::CheckState == 2: check box is checked
+                    backEnd.checkboxStatus = checkBoxTrackLocation.checkState
+
+                    //turn location tracking off or on depending on the checkbox status
+                    if(checkBoxTrackLocation.checkState == 0) {
+                        positionSource.active = false
+                        gpsLocationFlag.color = "#f40606"
+
+                        console.log("Location Tracking is turned off")
+                    }
+                    else if(checkBoxTrackLocation.checkState == 2) {
+                        positionSource.active = true
+                        console.log("Location Tracking is turned on")
+                    }
+                }
             }
 
             Text {
@@ -162,7 +204,14 @@ Window {
                         id: accessCodeFlag
                         width: 100
                         height: 25
-                        color: "#13f406"
+                        color: {
+                            if(backEnd.serverAccessCodeStatus) {
+                                accessCodeFlag.color = "#13f406"
+                            }
+                            else {
+                                accessCodeFlag.color = "#f40606"
+                            }
+                        }
                         Layout.fillHeight: false
                         Layout.fillWidth: false
                     }
@@ -191,7 +240,14 @@ Window {
                         id: networkConnectionFlag
                         width: 100
                         height: 25
-                        color: "#13f406"
+                        color: {
+                            if(backEnd.networkConnectionStatus) {
+                                networkConnectionFlag.color = "#13f406"
+                            }
+                            else {
+                                networkConnectionFlag.color = "#f40606"
+                            }
+                        }
                         Layout.fillHeight: false
                         Layout.fillWidth: false
                     }
@@ -225,7 +281,7 @@ Window {
                         id: gpsLocationFlag
                         width: 100
                         height: 25
-                        color: "#13f406"
+                        color: "#ffffff"
                         Layout.fillWidth: false
                         Layout.fillHeight: false
                     }
@@ -245,6 +301,8 @@ Window {
         }
 
         Column {
+            id: column1
+            Layout.fillHeight: true
             Layout.alignment: Qt.AlignLeft | Qt.AlignTop
             Layout.fillWidth: true
 
@@ -323,6 +381,10 @@ Window {
 
             ColumnLayout {
                 height: 50
+                anchors.left: parent.left
+                anchors.leftMargin: 0
+                anchors.right: parent.right
+                anchors.rightMargin: 0
 
                 RowLayout {
                     width: 100
@@ -341,10 +403,11 @@ Window {
                     Text {
                         id: timestampValue
                         text: qsTr("Value")
+                        wrapMode: Text.WordWrap
                         Layout.fillHeight: true
                         horizontalAlignment: Text.AlignLeft
                         font.pixelSize: 22
-                        Layout.fillWidth: false
+                        Layout.fillWidth: true
                         verticalAlignment: Text.AlignVCenter
                     }
                     spacing: 5
@@ -436,3 +499,8 @@ Window {
         }
     }
 }
+
+/*##^## Designer {
+    D{i:33;anchors_height:50}
+}
+ ##^##*/

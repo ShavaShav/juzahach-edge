@@ -14,10 +14,10 @@ class BackEnd : public QObject {
         Q_PROPERTY(QString serverAccessCode READ serverAccessCode WRITE setServerAccessCode NOTIFY serverAccessCodeChanged)
         Q_PROPERTY(QString locationData READ locationData WRITE setLocationData NOTIFY locationDataSent)
 
-        Q_PROPERTY(bool serverAccessCodeStatus READ serverAccessCodeStatus)
+        Q_PROPERTY(bool serverAccessCodeStatus READ serverAccessCodeStatus NOTIFY serverAccessCodeStatusChanged)
         Q_PROPERTY(bool locationDataSentStatus READ locationDataSentStatus)
-        Q_PROPERTY(int recordLocationDataStatus READ recordLocationDataStatus NOTIFY recordLocationDataChanged)
-        Q_PROPERTY(bool networkConnectionStatus READ networkConnectionStatus)
+        Q_PROPERTY(int checkboxStatus READ checkboxStatus WRITE setCheckboxStatus NOTIFY checkboxStatusChanged)
+        Q_PROPERTY(bool networkConnectionStatus READ networkConnectionStatus NOTIFY networkConnectionStatusChanged)
 
     //TODO::
     //get internet working and server communication
@@ -31,22 +31,25 @@ public:
     bool serverAccessCodeStatus();
     bool locationDataSentStatus();
     bool networkConnectionStatus();
-    int recordLocationDataStatus();
+    int checkboxStatus();
 
     //setter methods
     void setServerAccessCode(const QString &newCode);
     void setLocationData(const QString &locationInformation);
+    void setCheckboxStatus(const int &checkBoxValue);
 
 signals:
     void serverAccessCodeChanged();
     void locationDataSent();
-    void recordLocationDataChanged();
-
+    void checkboxStatusChanged();//prevent errors
+    void networkConnectionStatusChanged();
+    void serverAccessCodeStatusChanged();//prevent errors
 private:
     DatabaseHelper databaseHelper;
     QJsonObject json;
 
     QString accessCode;
+    QString jsonWebToken;
     QString timestamp;
     QString coordinates;
     QString longitude;
@@ -54,7 +57,7 @@ private:
 
     bool accessCodeStatusFlag;
     bool sendLocationDataFlag;
-    int recordLocationDataFlag = 0;
-    bool connectionStatusFlag = false;
+    int checkboxValue;
+    bool connectionStatusFlag;
 };
 #endif // BACKEND_H

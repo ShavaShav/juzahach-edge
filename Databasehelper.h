@@ -9,20 +9,25 @@
 #include <QHash>
 
 class DatabaseHelper {
-    public:
-        DatabaseHelper();
-        DatabaseHelper(bool flag);
+public:
+    DatabaseHelper();
+    DatabaseHelper(bool flag);
 
-        void insertLocation(const QString &latitude, const QString &longitude, const QString &timestamp);
-        void insertServerKey(QString serverString, int stringStatus);
-        QHash<QString, QString> getServerKey();
+    void updateAccessCode(QString accessCode);
+    void updateAccessCodeStatus(bool codeStatus);
+    void updateCheckboxValue(int checkBoxValue);
+    void updateJsonWebToken(QString jsonWebToken);
 
-    private:
-        void createDatabase(bool dropTablesFlag);
+    void updateLocation(const QString &latitude, const QString &longitude, const QString &timestamp);
 
-        QSqlDatabase database;
-        QSqlQuery sqlQuery;
-        QString queryString;
+    QHash<QString, QString> getSettings();
+
+private:
+    void createDatabase(bool dropTablesFlag);
+
+    QSqlDatabase database;
+    QSqlQuery sqlQuery;
+    QString queryString;
 };
 
 #endif // DATABASEHELPER_H
