@@ -68,6 +68,7 @@ Window {
                 if(checkBoxTrackLocation.checkState == 2) {
                     //send the data to the backend [C++]
                     //EPSG:4326 standard states that coordinate order should be latitude, longitude
+
                     backEnd.locationData = position.coordinate.latitude + " " + position.coordinate.longitude + "|" + position.timestamp
 
                     //update and show the new coordinates to the user

@@ -85,6 +85,9 @@ void BackEnd::setLocationData(const QString &locationInformation) {
         latitude = coordinates.left(coordinates.indexOf(" "));
         longitude = coordinates.mid(coordinates.indexOf(" ") + 1);
 
+        QDateTime datetime = QDateTime::fromString(timestamp);
+        timestamp = datetime.toString("yyyy-MM-dd hh:mm:ss");
+
         qInfo() << "[timestamp]: " + timestamp + "\n";
         qInfo() << "[coordinates]: " + coordinates + "\n";
         qInfo() << "[latitude]: " + latitude + "\n";
