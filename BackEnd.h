@@ -38,6 +38,9 @@ public:
     void setLocationData(const QString &locationInformation);
     void setCheckboxStatus(const int &checkBoxValue);
 
+public slots: //network reply callbacks
+    void onLocationReply(QNetworkReply* reply);
+
 signals:
     void serverAccessCodeChanged();
     void locationDataSent();
@@ -46,6 +49,7 @@ signals:
     void serverAccessCodeStatusChanged();//prevent errors
 private:
     DatabaseHelper databaseHelper;
+    QNetworkAccessManager *network_manager;
     QJsonObject json;
 
     QString accessCode;

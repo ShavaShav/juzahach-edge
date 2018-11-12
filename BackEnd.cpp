@@ -1,4 +1,6 @@
 #include "BackEnd.h"
+#include <QtNetwork>
+
 
 BackEnd::BackEnd(QObject *parent) : QObject(parent) {
     //sending 'true' to the constructor will drop all tables
@@ -77,6 +79,36 @@ void BackEnd::setCheckboxStatus(const int &newValue) {
     databaseHelper.updateCheckboxValue(checkboxValue);
 }
 
+// Called when POST /location request is responded to
+void BackEnd::onLocationReply(QNetworkReply *reply){
+    if (reply->error() == QNetworkReply::NoError) {
+        // Network is up and request succeeded
+
+        if (connectionStatusFlag == false) {
+            connectionStatusFlag = true;
+            emit networkConnectionStatusChanged();
+
+            // network was down, but it's back up now.
+            // TODO: remove all locations from database and call
+            // setLocationData on all of them here
+        }
+    } else {
+        // Network is down or requst denied for some reason.
+        // TODO: Check actual reason for error (network, bad request etc)
+        // We can retry if its just a server error
+
+        qDebug() << "Failure"  << reply->errorString();
+        // emit signal about error
+        connectionStatusFlag = false;
+        emit networkConnectionStatusChanged();
+
+        // save failed location to database (assumed network down)
+        // TODO: Find way to access posted location data, pass through onLocationReply?
+        // databaseHelper.updateLocation(latitude, longitude, timestamp);
+    }
+}
+
+// Calls the API with provided location
 void BackEnd::setLocationData(const QString &locationInformation) {
     if(locationInformation.length() > 1) {
         coordinates = locationInformation.left(locationInformation.indexOf("|"));
@@ -93,48 +125,37 @@ void BackEnd::setLocationData(const QString &locationInformation) {
         qInfo() << "[latitude]: " + latitude + "\n";
         qInfo() << "[longitude]: " + longitude + "\n";
 
-        //TODO::
-        //need to nest these, check GitLab
+        QJsonObject innerJson = QJsonObject();
+        innerJson["latitude"] = latitude;
+        innerJson["longitude"] = longitude;
+        innerJson["timestamp"] = timestamp;
+
         json = QJsonObject();
-        json["serverString"] = accessCode;
-        json["latitude"] = latitude;
-        json["longitude"] = longitude;
-        json["timestamp"] = timestamp;
+        json["device"] = innerJson;
+
+        QJsonDocument jsonDoc(json);
+        QByteArray jsonData= jsonDoc.toJson();
 
         qInfo() << "JSON OBJECT: " << json;
-        //Test to see if theres an internet connection and the server is available
-        //TODO::
-        QTcpSocket *socket = new QTcpSocket();
-        socket->connectToHost("www.google.ca", 80);
 
-        if(socket->waitForConnected(5000)) {
-            connectionStatusFlag = true;
-            emit networkConnectionStatusChanged();
-        }
-        else {
-            connectionStatusFlag = false;
-            emit networkConnectionStatusChanged();
-        }
+        // Set API url
+        QUrl serviceUrl = QUrl("http://192.168.1.136:3002/location");
 
-        if(accessCodeStatusFlag && connectionStatusFlag) {
-            //there is an internet connection
-            //server string is valid
-            //send ALL stored database entries, then delete the entries
-            sendLocationDataFlag = true;
+        // Set headers
+        QNetworkRequest request(serviceUrl);
+        request.setRawHeader("Authorization", "Bearer: TOKEN_HERE");
+        request.setHeader(QNetworkRequest::ContentTypeHeader,"application/json");
+        request.setHeader(QNetworkRequest::ContentLengthHeader,QByteArray::number(jsonData.size()));
 
-            emit locationDataSent();
-        }
-        else if(accessCodeStatusFlag) {
-            //no internet connection
-            //server string is invalid
-            databaseHelper.updateLocation(latitude, longitude, timestamp);
+        network_manager = new QNetworkAccessManager(this);
+        QObject::connect(network_manager, SIGNAL(finished(QNetworkReply *)), this, SLOT(onLocationReply(QNetworkReply *)));
 
-            sendLocationDataFlag = false;
+        // Send as POST (regardless if we know connection is established)
+        network_manager->post(request, jsonData);
 
-            emit locationDataSent();
-        }
-        else {
-            qInfo() << "No location data stored or sent";
-        }
+        // Let everyone know we did it
+        sendLocationDataFlag = true;
+        emit locationDataSent();
+
     }
 }
