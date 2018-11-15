@@ -40,6 +40,8 @@ public:
 
 public slots: //network reply callbacks
     void onLocationReply(QNetworkReply* reply);
+    void onRegisterReply(QNetworkReply* reply);
+
 
 signals:
     void serverAccessCodeChanged();
@@ -58,6 +60,7 @@ private:
     QString coordinates;
     QString longitude;
     QString latitude;
+    const QString API_URL = "http://192.168.1.136:3002";
 
     bool accessCodeStatusFlag;
     bool sendLocationDataFlag;
