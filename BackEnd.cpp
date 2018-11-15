@@ -57,32 +57,119 @@ int BackEnd::checkboxStatus() {
     return checkboxValue;
 }
 
-//setter methods
-void BackEnd::setServerAccessCode(const QString &newCode) {
-    if(newCode != "") {
-        accessCode = newCode;
-
-        //perform a server test with the new string
-        //TODO::
-        accessCodeStatusFlag = true;
-
-        databaseHelper.updateAccessCode(accessCode);
-        databaseHelper.updateAccessCodeStatus(accessCodeStatusFlag);
-        databaseHelper.updateJsonWebToken("JSON WEBTOKEN NEW UPDATED VALUE");
-
-        emit serverAccessCodeChanged();
-    }
-}
-
 void BackEnd::setCheckboxStatus(const int &newValue) {
     checkboxValue = newValue;
     databaseHelper.updateCheckboxValue(checkboxValue);
+}
+
+//setter methods
+void BackEnd::setServerAccessCode(const QString &newCode) {
+    if(newCode != "") {
+
+        // TODO: Consider removing access code storage, since it's a one time code we dont need to save
+        accessCode = newCode;
+        accessCodeStatusFlag = true;
+        databaseHelper.updateAccessCode(accessCode);
+        databaseHelper.updateAccessCodeStatus(accessCodeStatusFlag);
+        emit serverAccessCodeChanged();
+
+        // Form body
+        QJsonObject innerJson = QJsonObject();
+        innerJson["accessCode"] = accessCode;
+        innerJson["macAddress"] = "FAKE_MAC_ALL_DEVICES_WILL_BE_SAME";
+
+        json = QJsonObject();
+        json["device"] = innerJson;
+
+        QJsonDocument jsonDoc(json);
+        QByteArray jsonData= jsonDoc.toJson();
+
+        // Set API url
+        QUrl serviceUrl = QUrl(API_URL + "/register");
+
+        // Set headers
+        QNetworkRequest request(serviceUrl);
+        request.setRawHeader("Accept","application/json");
+        request.setHeader(QNetworkRequest::ContentTypeHeader,"application/json");
+        request.setHeader(QNetworkRequest::ContentLengthHeader,QByteArray::number(jsonData.size()));
+
+        network_manager = new QNetworkAccessManager(this);
+        QObject::connect(network_manager, SIGNAL(finished(QNetworkReply *)), this, SLOT(onRegisterReply(QNetworkReply *)));
+
+        // Send as POST (regardless if we know connection is established)
+        network_manager->post(request, jsonData);
+    }
+}
+
+// Called when POST /location request is responded to
+void BackEnd::onRegisterReply(QNetworkReply *reply){
+    if (reply->error() == QNetworkReply::NoError) {
+        QByteArray buffer = reply->readAll();
+        qDebug() << "/register REPLY: "  << buffer;
+
+        QJsonDocument  jsonDoc = QJsonDocument::fromJson(buffer);
+        QJsonObject jsonReply = jsonDoc.object();
+
+        jsonWebToken = jsonReply["token"].toString();
+
+        databaseHelper.updateJsonWebToken(jsonWebToken);
+    } else {
+        qDebug() << "/register FAIL: "  << reply->errorString();
+    }
+}
+
+// Calls the API with provided location
+void BackEnd::setLocationData(const QString &locationInformation) {
+    if(jsonWebToken.length() > 0 && locationInformation.length() > 1) {
+        coordinates = locationInformation.left(locationInformation.indexOf("|"));
+        timestamp = locationInformation.mid(locationInformation.indexOf("|") + 1);
+
+        latitude = coordinates.left(coordinates.indexOf(" "));
+        longitude = coordinates.mid(coordinates.indexOf(" ") + 1);
+
+        // Convert timestamp
+        QDateTime datetime = QDateTime::fromString(timestamp);
+        timestamp = datetime.toString("yyyy-MM-dd hh:mm:ss");
+
+        // Form JSON body
+        QJsonObject innerJson = QJsonObject();
+        innerJson["latitude"] = latitude;
+        innerJson["longitude"] = longitude;
+        innerJson["timestamp"] = timestamp;
+
+        json = QJsonObject();
+        json["location"] = innerJson;
+
+        QJsonDocument jsonDoc(json);
+        QByteArray jsonData= jsonDoc.toJson();
+
+        // Set API url
+        QUrl serviceUrl = QUrl(API_URL + "/location");
+
+        // Set headers
+        QNetworkRequest request(serviceUrl);
+        request.setRawHeader("Authorization", "Bearer " + jsonWebToken.toUtf8());
+        request.setHeader(QNetworkRequest::ContentTypeHeader,"application/json");
+        request.setHeader(QNetworkRequest::ContentLengthHeader,QByteArray::number(jsonData.size()));
+
+        network_manager = new QNetworkAccessManager(this);
+        QObject::connect(network_manager, SIGNAL(finished(QNetworkReply *)), this, SLOT(onLocationReply(QNetworkReply *)));
+
+        // Send as POST (regardless if we know connection is established)
+        network_manager->post(request, jsonData);
+
+        // Let everyone know we did it
+        sendLocationDataFlag = true;
+        emit locationDataSent();
+
+    }
 }
 
 // Called when POST /location request is responded to
 void BackEnd::onLocationReply(QNetworkReply *reply){
     if (reply->error() == QNetworkReply::NoError) {
         // Network is up and request succeeded
+        qDebug() << "/location REPLY: "  << reply->readAll();
 
         if (connectionStatusFlag == false) {
             connectionStatusFlag = true;
@@ -97,7 +184,7 @@ void BackEnd::onLocationReply(QNetworkReply *reply){
         // TODO: Check actual reason for error (network, bad request etc)
         // We can retry if its just a server error
 
-        qDebug() << "Failure"  << reply->errorString();
+        qDebug() << "/location FAIL: "  << reply->errorString();
         // emit signal about error
         connectionStatusFlag = false;
         emit networkConnectionStatusChanged();
@@ -105,57 +192,5 @@ void BackEnd::onLocationReply(QNetworkReply *reply){
         // save failed location to database (assumed network down)
         // TODO: Find way to access posted location data, pass through onLocationReply?
         // databaseHelper.updateLocation(latitude, longitude, timestamp);
-    }
-}
-
-// Calls the API with provided location
-void BackEnd::setLocationData(const QString &locationInformation) {
-    if(locationInformation.length() > 1) {
-        coordinates = locationInformation.left(locationInformation.indexOf("|"));
-        timestamp = locationInformation.mid(locationInformation.indexOf("|") + 1);
-
-        latitude = coordinates.left(coordinates.indexOf(" "));
-        longitude = coordinates.mid(coordinates.indexOf(" ") + 1);
-
-        QDateTime datetime = QDateTime::fromString(timestamp);
-        timestamp = datetime.toString("yyyy-MM-dd hh:mm:ss");
-
-        qInfo() << "[timestamp]: " + timestamp + "\n";
-        qInfo() << "[coordinates]: " + coordinates + "\n";
-        qInfo() << "[latitude]: " + latitude + "\n";
-        qInfo() << "[longitude]: " + longitude + "\n";
-
-        QJsonObject innerJson = QJsonObject();
-        innerJson["latitude"] = latitude;
-        innerJson["longitude"] = longitude;
-        innerJson["timestamp"] = timestamp;
-
-        json = QJsonObject();
-        json["device"] = innerJson;
-
-        QJsonDocument jsonDoc(json);
-        QByteArray jsonData= jsonDoc.toJson();
-
-        qInfo() << "JSON OBJECT: " << json;
-
-        // Set API url
-        QUrl serviceUrl = QUrl("http://192.168.1.136:3002/location");
-
-        // Set headers
-        QNetworkRequest request(serviceUrl);
-        request.setRawHeader("Authorization", "Bearer: TOKEN_HERE");
-        request.setHeader(QNetworkRequest::ContentTypeHeader,"application/json");
-        request.setHeader(QNetworkRequest::ContentLengthHeader,QByteArray::number(jsonData.size()));
-
-        network_manager = new QNetworkAccessManager(this);
-        QObject::connect(network_manager, SIGNAL(finished(QNetworkReply *)), this, SLOT(onLocationReply(QNetworkReply *)));
-
-        // Send as POST (regardless if we know connection is established)
-        network_manager->post(request, jsonData);
-
-        // Let everyone know we did it
-        sendLocationDataFlag = true;
-        emit locationDataSent();
-
     }
 }
