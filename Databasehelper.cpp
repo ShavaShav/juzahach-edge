@@ -135,13 +135,10 @@ QHash<QString, QString> DatabaseHelper::getSettings() {
 void DatabaseHelper::updateAccessCode(const QString accessCode) {
     qInfo() << "[VALUE] access_code: " + accessCode;
 
-    queryString =
-        "UPDATE Settings SET access_code = ':code';";
+    sqlQuery.prepare("UPDATE Settings SET access_code = ?");
+    sqlQuery.addBindValue(accessCode);
 
-    sqlQuery.prepare(queryString);
-    sqlQuery.bindValue(":code", accessCode);
-
-    if(sqlQuery.exec(queryString)) {
+    if(sqlQuery.exec()) {
         qInfo() << "\n[SQL][SUCCESS][UPDATE][Settings][access_code]\n";
     }
     else {
@@ -203,13 +200,10 @@ void DatabaseHelper::updateCheckboxValue(const int checkBoxValue) {
 void DatabaseHelper::updateJsonWebToken(const QString jsonWebToken) {
     qInfo() << "[VALUE] json_webtoken: "+ jsonWebToken;
 
-    queryString =
-        "UPDATE Settings SET json_webtoken = ':json';";
+    sqlQuery.prepare("UPDATE Settings SET json_webtoken = ?");
+    sqlQuery.addBindValue(jsonWebToken);
 
-    sqlQuery.prepare(queryString);
-    sqlQuery.bindValue(":json", jsonWebToken);
-
-    if(sqlQuery.exec(queryString)) {
+    if(sqlQuery.exec()) {
         qInfo() << "\n[SQL][SUCCESS][UPDATE][Settings][json_webtoken]\n";
     }
     else {
