@@ -51,7 +51,7 @@ void DatabaseHelper::createDatabase(bool dropTablesFlag) {
 
     //create the database tables, will show error if they already exist (thats okay)
     queryString =
-        "CREATE TABLE Settings ( "
+        "CREATE TABLE IF NOT EXISTS Settings ( "
             "access_code TEXT NOT NULL, "
             "code_status INTEGER NOT NULL, "
             "checkbox_value INTEGER NOT NULL, "
@@ -86,7 +86,7 @@ void DatabaseHelper::createDatabase(bool dropTablesFlag) {
     sqlQuery.finish();
 
     queryString =
-        "CREATE TABLE Locations ( "
+        "CREATE TABLE IF NOT EXISTS Locations ( "
             "index_entry INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
             "latitude TEXT NOT NULL, "
             "longitude TEXT NOT NULL, "
@@ -135,13 +135,10 @@ QHash<QString, QString> DatabaseHelper::getSettings() {
 void DatabaseHelper::updateAccessCode(const QString accessCode) {
     qInfo() << "[VALUE] access_code: " + accessCode;
 
-    queryString =
-        "UPDATE Settings SET access_code = ':code';";
+    sqlQuery.prepare("UPDATE Settings SET access_code = ?");
+    sqlQuery.addBindValue(accessCode);
 
-    sqlQuery.prepare(queryString);
-    sqlQuery.bindValue(":code", accessCode);
-
-    if(sqlQuery.exec(queryString)) {
+    if(sqlQuery.exec()) {
         qInfo() << "\n[SQL][SUCCESS][UPDATE][Settings][access_code]\n";
     }
     else {
@@ -203,13 +200,10 @@ void DatabaseHelper::updateCheckboxValue(const int checkBoxValue) {
 void DatabaseHelper::updateJsonWebToken(const QString jsonWebToken) {
     qInfo() << "[VALUE] json_webtoken: "+ jsonWebToken;
 
-    queryString =
-        "UPDATE Settings SET json_webtoken = ':json';";
+    sqlQuery.prepare("UPDATE Settings SET json_webtoken = ?");
+    sqlQuery.addBindValue(jsonWebToken);
 
-    sqlQuery.prepare(queryString);
-    sqlQuery.bindValue(":json", jsonWebToken);
-
-    if(sqlQuery.exec(queryString)) {
+    if(sqlQuery.exec()) {
         qInfo() << "\n[SQL][SUCCESS][UPDATE][Settings][json_webtoken]\n";
     }
     else {

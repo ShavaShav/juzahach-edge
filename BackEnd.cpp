@@ -20,6 +20,19 @@ BackEnd::BackEnd(QObject *parent) : QObject(parent) {
     qInfo() << "[checkbox_value]: " + QString::number(checkboxValue) + "\n";
     qInfo() << "[json_webtoken]: " + jsonWebToken + "\n";
 
+    // Use
+    if (accessCode.compare("access_code_placeholder") == 0) {
+
+        accessCode = QUuid::createUuid().toString();
+
+        qInfo() << "[new_access_code]: " + accessCode + "\n";
+
+        accessCodeStatusFlag = true;
+        databaseHelper.updateAccessCode(accessCode);
+        databaseHelper.updateAccessCodeStatus(accessCodeStatusFlag);
+        emit serverAccessCodeChanged();
+    }
+
     //connect to google.ca to test network connection
     QTcpSocket *socket = new QTcpSocket();
     socket->connectToHost("www.google.ca", 80);
@@ -66,17 +79,10 @@ void BackEnd::setCheckboxStatus(const int &newValue) {
 void BackEnd::setServerAccessCode(const QString &newCode) {
     if(newCode != "") {
 
-        // TODO: Consider removing access code storage, since it's a one time code we dont need to save
-        accessCode = newCode;
-        accessCodeStatusFlag = true;
-        databaseHelper.updateAccessCode(accessCode);
-        databaseHelper.updateAccessCodeStatus(accessCodeStatusFlag);
-        emit serverAccessCodeChanged();
-
         // Form body
         QJsonObject innerJson = QJsonObject();
-        innerJson["accessCode"] = accessCode;
-        innerJson["macAddress"] = "FAKE_MAC_ALL_DEVICES_WILL_BE_SAME";
+        innerJson["accessCode"] = newCode;
+        innerJson["macAddress"] = accessCode; // Should rename accessCode stuff to macAddress or UUID or something
 
         json = QJsonObject();
         json["device"] = innerJson;
@@ -120,7 +126,7 @@ void BackEnd::onRegisterReply(QNetworkReply *reply){
 
 // Calls the API with provided location
 void BackEnd::setLocationData(const QString &locationInformation) {
-    if(jsonWebToken.length() > 0 && locationInformation.length() > 1) {
+    if(jsonWebToken.compare("json_web_token_placeholder") != 0 && locationInformation.length() > 1) {
         coordinates = locationInformation.left(locationInformation.indexOf("|"));
         timestamp = locationInformation.mid(locationInformation.indexOf("|") + 1);
 
