@@ -51,7 +51,7 @@ void DatabaseHelper::createDatabase(bool dropTablesFlag) {
 
     //create the database tables, will show error if they already exist (thats okay)
     queryString =
-        "CREATE TABLE Settings ( "
+        "CREATE TABLE IF NOT EXISTS Settings ( "
             "access_code TEXT NOT NULL, "
             "code_status INTEGER NOT NULL, "
             "checkbox_value INTEGER NOT NULL, "
@@ -86,7 +86,7 @@ void DatabaseHelper::createDatabase(bool dropTablesFlag) {
     sqlQuery.finish();
 
     queryString =
-        "CREATE TABLE Locations ( "
+        "CREATE TABLE IF NOT EXISTS Locations ( "
             "index_entry INTEGER NOT NULL PRIMARY KEY AUTOINCREMENT, "
             "latitude TEXT NOT NULL, "
             "longitude TEXT NOT NULL, "
