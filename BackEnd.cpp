@@ -126,7 +126,7 @@ void BackEnd::onRegisterReply(QNetworkReply *reply){
 
 // Calls the API with provided location
 void BackEnd::setLocationData(const QString &locationInformation) {
-    if(jsonWebToken.length() > 0 && locationInformation.length() > 1) {
+    if(jsonWebToken.compare("json_web_token_placeholder") != 0 && locationInformation.length() > 1) {
         coordinates = locationInformation.left(locationInformation.indexOf("|"));
         timestamp = locationInformation.mid(locationInformation.indexOf("|") + 1);
 
