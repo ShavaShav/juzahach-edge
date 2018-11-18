@@ -19,7 +19,7 @@ Window {
     visible: true
     width: 450
     height: 550
-    title: qsTr("GPS Location Tracker")
+    title: qsTr("Juzahach Edge")
 
     BackEnd {
         id: backEnd
@@ -105,7 +105,7 @@ Window {
                     textField.focus = true
                 }
 
-                text: qsTr("Connect Device")
+                text: qsTr("Register Device")
                 anchors.right: parent.right
                 anchors.rightMargin: 0
                 anchors.left: parent.left
@@ -219,7 +219,7 @@ Window {
                     }
 
                     Text {
-                        text: qsTr("Server Access Code ")
+                        text: qsTr("Authenticated")
                         Layout.fillHeight: true
                         horizontalAlignment: Text.AlignLeft
                         font.pixelSize: 22
@@ -422,11 +422,11 @@ Window {
 
     }
 
-    //will open when the "Connect Device" button is clicked
+    //will open when the "Register Device" button is clicked
     Dialog {
         id: dialog
         visible: false
-        title: qsTr("Connect Device")
+        title: qsTr("Register Device")
         height: 225
         width: window.width
 
@@ -450,7 +450,7 @@ Window {
                         font.weight: Font.Bold
                         font.pixelSize: 22
                         wrapMode: Label.WordWrap
-                        text: qsTr("Enter the Server key to connect the device")
+                        text: qsTr("Enter the Access Code to register the device")
                         color: "Black"
 
                         anchors.right: parent.right
