@@ -55,6 +55,7 @@ Window {
     //activate Geolocation and attempt to get the current location
     PositionSource {
         id: positionSource
+        updateInterval: 6000 // 6 seconds
         onPositionChanged: {
             //display current location components
             if((position.coordinate + "") == "") {
