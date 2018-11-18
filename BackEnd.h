@@ -60,7 +60,7 @@ private:
     QString coordinates;
     QString longitude;
     QString latitude;
-    const QString API_URL = "http://192.168.1.136:3002";
+    const QString API_URL = "http://juzahach-edge.herokuapp.com";
 
     bool accessCodeStatusFlag;
     bool sendLocationDataFlag;
