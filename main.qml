@@ -18,7 +18,7 @@ Window {
     id: window
     visible: true
     width: 450
-    height: 550
+    height: 600
     title: qsTr("Juzahach Edge")
 
     BackEnd {
@@ -88,21 +88,37 @@ Window {
         anchors.bottomMargin: 25
         anchors.topMargin: 25
         anchors.fill: parent
-        spacing: 5
+        spacing: 2
 
         Column {
             id: column
             width: 200
             height: 400
+            spacing: 10
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+
+            TextField {
+                font.weight: Font.Bold
+                font.pixelSize: 22
+                width: window.width
+                id: textField
+                placeholderText: qsTr("Code")
+
+                anchors.right: parent.right
+                anchors.rightMargin: 0
+                anchors.left: parent.left
+                anchors.leftMargin: 0
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                Layout.fillWidth: true
+            }
 
             Button {
                 id: buttonConnectDevice
                 padding: 25
                 onClicked: {
-                    dialog.visible = true
-                    textField.focus = true
+                    backEnd.serverAccessCode = textField.text
+                    textField.text = ""
                 }
 
                 text: qsTr("Register Device")
@@ -420,85 +436,6 @@ Window {
             spacing: -15
         }
 
-    }
-
-    //will open when the "Register Device" button is clicked
-    Dialog {
-        id: dialog
-        visible: false
-        title: qsTr("Register Device")
-        height: 225
-        width: window.width
-
-        contentItem:
-            Rectangle {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            color: "White"
-
-            ColumnLayout {
-                width: dialog.width
-                height: dialog.height
-
-                Column {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    Label {
-                        topPadding: 25
-                        width: dialog.width
-                        font.weight: Font.Bold
-                        font.pixelSize: 22
-                        wrapMode: Label.WordWrap
-                        text: qsTr("Enter the Access Code to register the device")
-                        color: "Black"
-
-                        anchors.right: parent.right
-                        anchors.rightMargin: 25
-                        anchors.left: parent.left
-                        anchors.leftMargin: 25
-                    }
-
-                    TextField {
-                        font.weight: Font.Bold
-                        font.pixelSize: 22
-                        width: dialog.width
-                        id: textField
-                        placeholderText: qsTr("Code")
-
-                        anchors.right: parent.right
-                        anchors.rightMargin: 25
-                        anchors.left: parent.left
-                        anchors.leftMargin: 25
-                    }
-
-                    DialogButtonBox {
-                        topPadding: 25
-                        bottomPadding: 25
-                        position: DialogButtonBox.Footer
-                        standardButtons: DialogButtonBox.Cancel | DialogButtonBox.Ok
-                        font.weight: Font.Bold
-                        font.pixelSize: 22
-
-                        anchors.right: parent.right
-                        anchors.rightMargin: 25
-                        anchors.left: parent.left
-                        anchors.leftMargin: 25
-
-                        //will send the textbox string to C++ code
-                        onAccepted: {
-                            backEnd.serverAccessCode = textField.text
-                            textField.text = ""
-                            dialog.visible = false
-                        }
-                        onRejected: {
-                            textField.text = ""
-                            dialog.visible = false
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 

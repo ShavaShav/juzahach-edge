@@ -5,7 +5,7 @@
 BackEnd::BackEnd(QObject *parent) : QObject(parent) {
     //sending 'true' to the constructor will drop all tables
     //and recreate them, all data will be lost
-    databaseHelper = DatabaseHelper(false);
+    databaseHelper = DatabaseHelper(true);
 
     //get accessCode, accessCodeStatus and checkbox value from the database
     QHash<QString, QString> hashmap = databaseHelper.getSettings();
@@ -27,10 +27,7 @@ BackEnd::BackEnd(QObject *parent) : QObject(parent) {
 
         qInfo() << "[new_access_code]: " + accessCode + "\n";
 
-        accessCodeStatusFlag = true;
         databaseHelper.updateAccessCode(accessCode);
-        databaseHelper.updateAccessCodeStatus(accessCodeStatusFlag);
-        emit serverAccessCodeChanged();
     }
 
     //connect to google.ca to test network connection
@@ -118,8 +115,14 @@ void BackEnd::onRegisterReply(QNetworkReply *reply){
 
         jsonWebToken = jsonReply["token"].toString();
 
+        accessCodeStatusFlag = true;
+        databaseHelper.updateAccessCodeStatus(accessCodeStatusFlag);
+        emit serverAccessCodeChanged();
         databaseHelper.updateJsonWebToken(jsonWebToken);
     } else {
+        accessCodeStatusFlag = false;
+        databaseHelper.updateAccessCodeStatus(accessCodeStatusFlag);
+        emit serverAccessCodeChanged();
         qDebug() << "/register FAIL: "  << reply->errorString();
     }
 }
