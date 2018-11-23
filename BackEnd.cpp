@@ -5,7 +5,7 @@
 BackEnd::BackEnd(QObject *parent) : QObject(parent) {
     //sending 'true' to the constructor will drop all tables
     //and recreate them, all data will be lost
-    databaseHelper = DatabaseHelper(true);
+    databaseHelper = DatabaseHelper(false);
 
     //get accessCode, accessCodeStatus and checkbox value from the database
     QHash<QString, QString> hashmap = databaseHelper.getSettings();
