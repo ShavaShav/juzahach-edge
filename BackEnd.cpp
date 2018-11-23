@@ -30,16 +30,7 @@ BackEnd::BackEnd(QObject *parent) : QObject(parent) {
         databaseHelper.updateAccessCode(accessCode);
     }
 
-    //connect to google.ca to test network connection
-    QTcpSocket *socket = new QTcpSocket();
-    socket->connectToHost("www.google.ca", 80);
-
-    if(socket->waitForConnected(5000)) {
-        connectionStatusFlag = true;
-    }
-    else {
-        connectionStatusFlag = false;
-    }
+    connectionStatusFlag = false; // havent connected yet
 }
 
 //getter methods

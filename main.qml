@@ -45,9 +45,11 @@ Window {
         onLocationDataSent: {
             if(backEnd.locationDataSentStatus) {
                 console.log("\n[SUCCESS] Sent location data to server")
+                gpsLocationFlag.color = "#13f406"
             }
             else {
                 console.log("\n[FAILURE] Could not send location data to server, stored in local database")
+                gpsLocationFlag.color = "#f40606"
             }
         }
     }
@@ -60,7 +62,6 @@ Window {
             //display current location components
             if((position.coordinate + "") == "") {
                 //no location, show an error to the user
-                gpsLocationFlag.color = "#f40606"
                 latitudeValue.text = "Unavailable"
                 longitudeValue.text = "Unavailable"
                 timestampValue.text = "Unavailable"
@@ -73,7 +74,6 @@ Window {
                     backEnd.locationData = position.coordinate.latitude + " " + position.coordinate.longitude + "|" + position.timestamp
 
                     //update and show the new coordinates to the user
-                    gpsLocationFlag.color = "#13f406"
                     latitudeValue.text = position.coordinate.latitude
                     longitudeValue.text = position.coordinate.longitude
                     timestampValue.text = position.timestamp
@@ -271,7 +271,7 @@ Window {
                     }
 
                     Text {
-                        text: qsTr("Network Connection")
+                        text: qsTr("Cloud Connection")
                         Layout.fillHeight: true
                         horizontalAlignment: Text.AlignLeft
                         font.pixelSize: 22
@@ -305,7 +305,7 @@ Window {
                     }
 
                     Text {
-                        text: qsTr("GPS Location Found")
+                        text: qsTr("Sending Location")
                         verticalAlignment: Text.AlignVCenter
                         horizontalAlignment: Text.AlignLeft
                         Layout.fillWidth: false
