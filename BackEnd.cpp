@@ -27,22 +27,10 @@ BackEnd::BackEnd(QObject *parent) : QObject(parent) {
 
         qInfo() << "[new_access_code]: " + accessCode + "\n";
 
-        accessCodeStatusFlag = true;
         databaseHelper.updateAccessCode(accessCode);
-        databaseHelper.updateAccessCodeStatus(accessCodeStatusFlag);
-        emit serverAccessCodeChanged();
     }
 
-    //connect to google.ca to test network connection
-    QTcpSocket *socket = new QTcpSocket();
-    socket->connectToHost("www.google.ca", 80);
-
-    if(socket->waitForConnected(5000)) {
-        connectionStatusFlag = true;
-    }
-    else {
-        connectionStatusFlag = false;
-    }
+    connectionStatusFlag = false; // havent connected yet
 }
 
 //getter methods
@@ -118,8 +106,14 @@ void BackEnd::onRegisterReply(QNetworkReply *reply){
 
         jsonWebToken = jsonReply["token"].toString();
 
+        accessCodeStatusFlag = true;
+        databaseHelper.updateAccessCodeStatus(accessCodeStatusFlag);
+        emit serverAccessCodeChanged();
         databaseHelper.updateJsonWebToken(jsonWebToken);
     } else {
+        accessCodeStatusFlag = false;
+        databaseHelper.updateAccessCodeStatus(accessCodeStatusFlag);
+        emit serverAccessCodeChanged();
         qDebug() << "/register FAIL: "  << reply->errorString();
     }
 }

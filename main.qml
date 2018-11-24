@@ -18,7 +18,7 @@ Window {
     id: window
     visible: true
     width: 450
-    height: 550
+    height: 600
     title: qsTr("Juzahach Edge")
 
     BackEnd {
@@ -45,9 +45,11 @@ Window {
         onLocationDataSent: {
             if(backEnd.locationDataSentStatus) {
                 console.log("\n[SUCCESS] Sent location data to server")
+                gpsLocationFlag.color = "#13f406"
             }
             else {
                 console.log("\n[FAILURE] Could not send location data to server, stored in local database")
+                gpsLocationFlag.color = "#f40606"
             }
         }
     }
@@ -60,7 +62,6 @@ Window {
             //display current location components
             if((position.coordinate + "") == "") {
                 //no location, show an error to the user
-                gpsLocationFlag.color = "#f40606"
                 latitudeValue.text = "Unavailable"
                 longitudeValue.text = "Unavailable"
                 timestampValue.text = "Unavailable"
@@ -73,7 +74,6 @@ Window {
                     backEnd.locationData = position.coordinate.latitude + " " + position.coordinate.longitude + "|" + position.timestamp
 
                     //update and show the new coordinates to the user
-                    gpsLocationFlag.color = "#13f406"
                     latitudeValue.text = position.coordinate.latitude
                     longitudeValue.text = position.coordinate.longitude
                     timestampValue.text = position.timestamp
@@ -88,21 +88,37 @@ Window {
         anchors.bottomMargin: 25
         anchors.topMargin: 25
         anchors.fill: parent
-        spacing: 5
+        spacing: 2
 
         Column {
             id: column
             width: 200
             height: 400
+            spacing: 10
             Layout.fillWidth: true
             Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+
+            TextField {
+                font.weight: Font.Bold
+                font.pixelSize: 22
+                width: window.width
+                id: textField
+                placeholderText: qsTr("Code")
+
+                anchors.right: parent.right
+                anchors.rightMargin: 0
+                anchors.left: parent.left
+                anchors.leftMargin: 0
+                Layout.alignment: Qt.AlignHCenter | Qt.AlignTop
+                Layout.fillWidth: true
+            }
 
             Button {
                 id: buttonConnectDevice
                 padding: 25
                 onClicked: {
-                    dialog.visible = true
-                    textField.focus = true
+                    backEnd.serverAccessCode = textField.text
+                    textField.text = ""
                 }
 
                 text: qsTr("Register Device")
@@ -255,7 +271,7 @@ Window {
                     }
 
                     Text {
-                        text: qsTr("Network Connection")
+                        text: qsTr("Cloud Connection")
                         Layout.fillHeight: true
                         horizontalAlignment: Text.AlignLeft
                         font.pixelSize: 22
@@ -289,7 +305,7 @@ Window {
                     }
 
                     Text {
-                        text: qsTr("GPS Location Found")
+                        text: qsTr("Sending Location")
                         verticalAlignment: Text.AlignVCenter
                         horizontalAlignment: Text.AlignLeft
                         Layout.fillWidth: false
@@ -420,85 +436,6 @@ Window {
             spacing: -15
         }
 
-    }
-
-    //will open when the "Register Device" button is clicked
-    Dialog {
-        id: dialog
-        visible: false
-        title: qsTr("Register Device")
-        height: 225
-        width: window.width
-
-        contentItem:
-            Rectangle {
-            Layout.fillWidth: true
-            Layout.fillHeight: true
-            color: "White"
-
-            ColumnLayout {
-                width: dialog.width
-                height: dialog.height
-
-                Column {
-                    Layout.fillWidth: true
-                    Layout.fillHeight: true
-
-                    Label {
-                        topPadding: 25
-                        width: dialog.width
-                        font.weight: Font.Bold
-                        font.pixelSize: 22
-                        wrapMode: Label.WordWrap
-                        text: qsTr("Enter the Access Code to register the device")
-                        color: "Black"
-
-                        anchors.right: parent.right
-                        anchors.rightMargin: 25
-                        anchors.left: parent.left
-                        anchors.leftMargin: 25
-                    }
-
-                    TextField {
-                        font.weight: Font.Bold
-                        font.pixelSize: 22
-                        width: dialog.width
-                        id: textField
-                        placeholderText: qsTr("Code")
-
-                        anchors.right: parent.right
-                        anchors.rightMargin: 25
-                        anchors.left: parent.left
-                        anchors.leftMargin: 25
-                    }
-
-                    DialogButtonBox {
-                        topPadding: 25
-                        bottomPadding: 25
-                        position: DialogButtonBox.Footer
-                        standardButtons: DialogButtonBox.Cancel | DialogButtonBox.Ok
-                        font.weight: Font.Bold
-                        font.pixelSize: 22
-
-                        anchors.right: parent.right
-                        anchors.rightMargin: 25
-                        anchors.left: parent.left
-                        anchors.leftMargin: 25
-
-                        //will send the textbox string to C++ code
-                        onAccepted: {
-                            backEnd.serverAccessCode = textField.text
-                            textField.text = ""
-                            dialog.visible = false
-                        }
-                        onRejected: {
-                            textField.text = ""
-                            dialog.visible = false
-                        }
-                    }
-                }
-            }
-        }
     }
 }
 
